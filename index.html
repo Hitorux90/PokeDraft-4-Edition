@@ -173,7 +173,7 @@
                    
                    if (celdaActual === entrenadorBuscado) {
                        encontrado = true;
-                       for (let i = 1; i <= 8; i++) {
+                       for (let i = 1; i <= 10; i++) {
                            if (r + i >= matrizEquipos.length) break;
                            let indicePoke = c + 1;
                            if (indicePoke < matrizEquipos[r+i].length) {
@@ -183,7 +183,7 @@
                                    pokemonDelEntrenador.push(posiblePoke);
                                }
                            }
-                           if (pokemonDelEntrenador.length >= 6) break;
+                           if (pokemonDelEntrenador.length >= 8) break;
                        }
                        break; 
                    }
