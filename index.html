@@ -7,7 +7,7 @@
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f141e; color: #ffffff; margin: 0; padding: 0; scroll-behavior: smooth; }
     .menu-superior { display: flex; justify-content: center; gap: 20px; padding: 20px; background-color: #0f141e; }
-    .menu-superior a { color: #cbd5e1; text-decoration: none; font-weight: bold; font-size: 14px; }
+    .menu-superior a { color: #cbd5e1; text-decoration: none; font-weight: bold; font-size: 14px; cursor: pointer; }
     .menu-superior a.activo, .menu-superior a:hover { color: #fbbf24; }
     .cabecera { text-align: center; padding: 20px 0; }
     .cabecera h1 { color: #fbbf24; margin: 0; font-size: 28px; }
@@ -29,15 +29,18 @@
     .pokemon-item img:hover { transform: scale(1.2); }
     .pokemon-nombre { margin-top: 8px; font-size: 13px; color: #e2e8f0; text-transform: capitalize; }
     @media (max-width: 600px) { .grid-pokemon { grid-template-columns: repeat(2, 1fr); } }
+
+    /* ESTO ES NUEVO: Clase para ocultar las secciones que no están activas */
+    .oculto { display: none !important; }
   </style>
 </head>
 <body>
 
   <div class="app-contenedor">
     <nav class="menu-superior">
-      <a href="#clasificacion" class="activo">Liga y Torneo</a>
-      <a href="#">Jornadas</a>
-      <a href="#equipos">Equipos</a>
+      <a href="#clasificacion" class="btn-menu activo">Liga y Torneo</a>
+      <a href="#jornadas" class="btn-menu">Jornadas</a>
+      <a href="#equipos" class="btn-menu">Equipos</a>
     </nav>
 
     <header class="cabecera">
@@ -58,15 +61,47 @@
       </div>
     </main>
 
-    <main id="equipos" class="seccion-principal">
-      <h2 class="titulo-seccion" style="text-align:center; color:#fbbf24; margin-top: 40px; font-size: 24px;">Equipos</h2>
+    <main id="equipos" class="seccion-principal oculto">
+      <h2 class="titulo-seccion" style="text-align:center; color:#fbbf24; font-size: 24px;">Equipos</h2>
       <div id="contenedor-equipos" class="grid-equipos">
         <p style="text-align:center;">Buscando Pokémon en las Poké Balls (cargando datos)...</p>
       </div>
     </main>
+    
+    <main id="jornadas" class="seccion-principal oculto">
+      <h2 class="titulo-seccion" style="text-align:center; color:#fbbf24; font-size: 24px;">Jornadas</h2>
+      <p style="text-align:center;">Las jornadas se mostrarán aquí próximamente...</p>
+    </main>
+
   </div>
 
   <script>
+    // --- LÓGICA NUEVA: SISTEMA DE PESTAÑAS (TABS) ---
+    const botonesMenu = document.querySelectorAll('.btn-menu');
+    const secciones = document.querySelectorAll('.seccion-principal');
+
+    botonesMenu.forEach(boton => {
+      boton.addEventListener('click', function(e) {
+        e.preventDefault(); // Evita que la página dé un salto brusco
+        
+        // 1. Miramos a qué sección quiere ir el usuario (ej: "equipos")
+        const idSeccion = this.getAttribute('href').substring(1); 
+        
+        // 2. Ocultamos TODAS las secciones añadiéndoles la clase .oculto
+        secciones.forEach(sec => sec.classList.add('oculto'));
+        
+        // 3. Quitamos el color dorado (activo) de TODOS los botones del menú
+        botonesMenu.forEach(btn => btn.classList.remove('activo'));
+        
+        // 4. Mostramos solo la sección que nos interesa quitándole la clase .oculto
+        document.getElementById(idSeccion).classList.remove('oculto');
+        
+        // 5. Pintamos de dorado el botón que hemos pulsado
+        this.classList.add('activo');
+      });
+    });
+
+    // --- LÓGICA DE DATOS: (Exactamente igual que antes) ---
     const urlRanking = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsq6OBXuY7D-RqfmXnmJgrj68kucNI_OMo__j8MrO5lNv1c5klBUoeX5C-w3wawnK7Qs5Ch4ct4hvh/pub?gid=1549772993&single=true&output=csv";
     const urlEquipos = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsq6OBXuY7D-RqfmXnmJgrj68kucNI_OMo__j8MrO5lNv1c5klBUoeX5C-w3wawnK7Qs5Ch4ct4hvh/pub?gid=2064883384&single=true&output=csv";
 
