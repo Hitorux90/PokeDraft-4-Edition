@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PokeLeague</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f141e; color: #ffffff; margin: 0; padding: 0; scroll-behavior: smooth; }
+    .menu-superior { display: flex; justify-content: center; gap: 20px; padding: 20px; background-color: #0f141e; }
+    .menu-superior a { color: #cbd5e1; text-decoration: none; font-weight: bold; font-size: 14px; }
+    .menu-superior a.activo, .menu-superior a:hover { color: #fbbf24; }
+    .cabecera { text-align: center; padding: 20px 0; }
+    .cabecera h1 { color: #fbbf24; margin: 0; font-size: 28px; }
+    .seccion-principal { max-width: 800px; margin: 0 auto; padding: 20px; }
+    .titulo-seccion { font-size: 20px; margin-bottom: 15px; }
+    .contenedor-tabla { background-color: #1e2532; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); }
+    table { width: 100%; border-collapse: collapse; text-align: center; }
+    thead { background-color: #2a3441; }
+    th { padding: 15px; color: #fbbf24; font-weight: bold; }
+    td { padding: 15px; border-bottom: 1px solid #2a3441; color: #e2e8f0; }
+    tbody tr:hover { background-color: #2a3441; }
+    tbody tr:last-child td { border-bottom: none; }
+    .grid-equipos { display: flex; flex-direction: column; gap: 30px; }
+    .tarjeta-equipo { background-color: #1e2532; border-radius: 10px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); }
+    .nombre-entrenador { color: #fbbf24; font-size: 20px; margin-top: 0; margin-bottom: 25px; border-bottom: 1px solid #2a3441; padding-bottom: 10px; }
+    .grid-pokemon { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; justify-items: center; }
+    .pokemon-item { display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .pokemon-item img { width: 75px; height: 75px; object-fit: contain; filter: drop-shadow(0 4px 2px rgba(0,0,0,0.5)); transition: transform 0.2s; }
+    .pokemon-item img:hover { transform: scale(1.2); }
+    .pokemon-nombre { margin-top: 8px; font-size: 13px; color: #e2e8f0; text-transform: capitalize; }
+    @media (max-width: 600px) { .grid-pokemon { grid-template-columns: repeat(2, 1fr); } }
+  </style>
+</head>
+<body>
+
+  <div class="app-contenedor">
+    <nav class="menu-superior">
+      <a href="#clasificacion" class="activo">Liga y Torneo</a>
+      <a href="#">Jornadas</a>
+      <a href="#equipos">Equipos</a>
+    </nav>
+
+    <header class="cabecera">
+      <h1>🏆 PokeLeague</h1>
+    </header>
+
+    <main id="clasificacion" class="seccion-principal">
+      <h2 class="titulo-seccion">Clasificación Liga</h2>
+      <div class="contenedor-tabla">
+        <table id="tabla-clasificacion">
+          <thead>
+            <tr><th>Entrenador</th><th>Victorias</th><th>Derrotas</th></tr>
+          </thead>
+          <tbody id="cuerpo-tabla">
+            <tr><td colspan="3">Cargando clasificación...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <main id="equipos" class="seccion-principal">
+      <h2 class="titulo-seccion" style="text-align:center; color:#fbbf24; margin-top: 40px; font-size: 24px;">Equipos</h2>
+      <div id="contenedor-equipos" class="grid-equipos">
+        <p style="text-align:center;">Buscando Pokémon en las Poké Balls (cargando datos)...</p>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const urlRanking = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsq6OBXuY7D-RqfmXnmJgrj68kucNI_OMo__j8MrO5lNv1c5klBUoeX5C-w3wawnK7Qs5Ch4ct4hvh/pub?gid=1549772993&single=true&output=csv";
+    const urlEquipos = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsq6OBXuY7D-RqfmXnmJgrj68kucNI_OMo__j8MrO5lNv1c5klBUoeX5C-w3wawnK7Qs5Ch4ct4hvh/pub?gid=2064883384&single=true&output=csv";
+
+    function normalizarTexto(texto) {
+      return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    }
+
+    async function cargarTodo() {
+      try {
+        const resRanking = await fetch(urlRanking);
+        const csvRanking = await resRanking.text();
+        const sepRank = csvRanking.includes(';') ? ';' : ',';
+        const filasRank = csvRanking.replace(/\r/g, '').split('\n');
+        const cuerpoTabla = document.getElementById('cuerpo-tabla');
+        cuerpoTabla.innerHTML = ''; 
+
+        let capturarDatos = false;
+        let indices = { rank: -1, entrenador: -1, victorias: -1, derrotas: -1 };
+        let listaEntrenadores = []; 
+
+        for (let i = 0; i < filasRank.length; i++) {
+          if (filasRank[i].trim() === '') continue;
+          const columnas = filasRank[i].split(sepRank);
+
+          if (!capturarDatos) {
+            for (let j = 0; j < columnas.length; j++) {
+              const texto = columnas[j].replace(/"/g, '').toUpperCase().trim();
+              if (texto.includes("RANK")) indices.rank = j;
+              if (texto.includes("ENTRENADOR")) indices.entrenador = j;
+              if (texto.includes("VICTORIAS")) indices.victorias = j;
+              if (texto.includes("DERROTAS")) indices.derrotas = j;
+            }
+            if (indices.rank !== -1 && indices.entrenador !== -1) capturarDatos = true;
+            continue;
+          }
+
+          if (capturarDatos) {
+            let rank = columnas[indices.rank] ? columnas[indices.rank].replace(/"/g, '').trim() : "";
+            let entrenador = columnas[indices.entrenador] ? columnas[indices.entrenador].replace(/"/g, '').trim() : "";
+            let victorias = columnas[indices.victorias] ? columnas[indices.victorias].replace(/"/g, '').trim() : "";
+            let derrotas = columnas[indices.derrotas] ? columnas[indices.derrotas].replace(/"/g, '').trim() : "";
+
+            if (/^\d+$/.test(rank)) {
+              if (entrenador && entrenador !== "---") listaEntrenadores.push(entrenador);
+              cuerpoTabla.innerHTML += `<tr><td>${entrenador === "" ? "---" : entrenador}</td><td>${victorias === "" ? "0" : victorias}</td><td>${derrotas === "" ? "0" : derrotas}</td></tr>`;
+            }
+          }
+        }
+
+        const resEquipos = await fetch(urlEquipos);
+        const csvEquipos = await resEquipos.text();
+        const sepEq = csvEquipos.includes(';') ? ';' : ',';
+        const filasEq = csvEquipos.replace(/\r/g, '').split('\n');
+        
+        let matrizEquipos = [];
+        for (let i = 0; i < filasEq.length; i++) { matrizEquipos.push(filasEq[i].split(sepEq)); }
+
+        const contenedorEquipos = document.getElementById('contenedor-equipos');
+        contenedorEquipos.innerHTML = '';
+
+        for (let nombreEntrenador of listaEntrenadores) {
+           let entrenadorBuscado = normalizarTexto(nombreEntrenador);
+           let pokemonDelEntrenador = [];
+           let encontrado = false;
+
+           for (let r = 0; r < matrizEquipos.length; r++) {
+               for (let c = 6; c < matrizEquipos[r].length; c++) {
+                   let celdaActual = normalizarTexto(matrizEquipos[r][c].replace(/"/g, ''));
+                   
+                   if (celdaActual === entrenadorBuscado) {
+                       encontrado = true;
+                       for (let i = 1; i <= 8; i++) {
+                           if (r + i >= matrizEquipos.length) break;
+                           let indicePoke = c + 1;
+                           if (indicePoke < matrizEquipos[r+i].length) {
+                               let posiblePoke = matrizEquipos[r+i][indicePoke].replace(/"/g, '').trim();
+                               let pokeNormalizado = normalizarTexto(posiblePoke);
+                               if (posiblePoke !== "" && isNaN(posiblePoke) && !pokeNormalizado.includes("pts") && !pokeNormalizado.includes("pokemon")) {
+                                   pokemonDelEntrenador.push(posiblePoke);
+                               }
+                           }
+                           if (pokemonDelEntrenador.length >= 6) break;
+                       }
+                       break; 
+                   }
+               }
+               if (encontrado) break; 
+       }
+
+       if (pokemonDelEntrenador.length > 0) {
+           let htmlPokemon = '';
+           for (let poke of pokemonDelEntrenador) {
+               let pokeLimpio = poke.toLowerCase().replace(/ /g, '-');
+               let imgPrincipal = `https://img.pokemondb.net/sprites/home/normal/${pokeLimpio}.png`;
+               let imgRescate = `https://play.pokemonshowdown.com/sprites/gen5/${pokeLimpio.replace(/-/g, '')}.png`;
+               htmlPokemon += `<div class="pokemon-item"><img src="${imgPrincipal}" onerror="this.onerror=null; this.src='${imgRescate}';" title="${poke}"><span class="pokemon-nombre">${pokeLimpio}</span></div>`;
+           }
+           contenedorEquipos.innerHTML += `<div class="tarjeta-equipo"><h3 class="nombre-entrenador">${nombreEntrenador}</h3><div class="grid-pokemon">${htmlPokemon}</div></div>`;
+       } else {
+           contenedorEquipos.innerHTML += `<div class="tarjeta-equipo" style="border: 1px solid #ef5350;"><h3 class="nombre-entrenador" style="color:#ef5350;">${nombreEntrenador} (Equipo no encontrado)</h3><p style="font-size: 12px; text-align:center;">Asegúrate de que este nombre esté escrito EXACTAMENTE igual en la pestaña de Equipos.</p></div>`;
+       }
+    }
+      } catch (error) { console.error(error); }
+    }
+    cargarTodo();
+  </script>
+</body>
+</html>
