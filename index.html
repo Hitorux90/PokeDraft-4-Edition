@@ -13,6 +13,7 @@
     .cabecera h1 { color: #fbbf24; margin: 0; font-size: 28px; }
     .seccion-principal { max-width: 800px; margin: 0 auto; padding: 20px; }
     .titulo-seccion { font-size: 20px; margin-bottom: 15px; }
+    
     .contenedor-tabla { background-color: #1e2532; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); }
     table { width: 100%; border-collapse: collapse; text-align: center; }
     thead { background-color: #2a3441; }
@@ -20,6 +21,7 @@
     td { padding: 15px; border-bottom: 1px solid #2a3441; color: #e2e8f0; }
     tbody tr:hover { background-color: #2a3441; }
     tbody tr:last-child td { border-bottom: none; }
+    
     .grid-equipos { display: flex; flex-direction: column; gap: 30px; }
     .tarjeta-equipo { background-color: #1e2532; border-radius: 10px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); }
     .nombre-entrenador { color: #fbbf24; font-size: 20px; margin-top: 0; margin-bottom: 25px; border-bottom: 1px solid #2a3441; padding-bottom: 10px; }
@@ -28,9 +30,10 @@
     .pokemon-item img { width: 75px; height: 75px; object-fit: contain; filter: drop-shadow(0 4px 2px rgba(0,0,0,0.5)); transition: transform 0.2s; }
     .pokemon-item img:hover { transform: scale(1.2); }
     .pokemon-nombre { margin-top: 8px; font-size: 13px; color: #e2e8f0; text-transform: capitalize; }
+    
     @media (max-width: 600px) { .grid-pokemon { grid-template-columns: repeat(2, 1fr); } }
 
-    /* ESTO ES NUEVO: Clase para ocultar las secciones que no están activas */
+    /* Clase para la navegación de pestañas */
     .oculto { display: none !important; }
   </style>
 </head>
@@ -69,48 +72,43 @@
     </main>
     
     <main id="jornadas" class="seccion-principal oculto">
-      <h2 class="titulo-seccion" style="text-align:center; color:#fbbf24; font-size: 24px;">Jornadas</h2>
-      <p style="text-align:center;">Las jornadas se mostrarán aquí próximamente...</p>
+      <h2 class="titulo-seccion" style="text-align:center; color:#fbbf24; font-size: 24px;">📅 Jornadas PokeLeague</h2>
+      <div id="contenedor-jornadas" class="grid-equipos">
+        <p style="text-align:center;">Buscando resultados de los combates...</p>
+      </div>
     </main>
 
   </div>
 
   <script>
-    // --- LÓGICA NUEVA: SISTEMA DE PESTAÑAS (TABS) ---
+    // Navegación de pestañas
     const botonesMenu = document.querySelectorAll('.btn-menu');
     const secciones = document.querySelectorAll('.seccion-principal');
 
     botonesMenu.forEach(boton => {
       boton.addEventListener('click', function(e) {
-        e.preventDefault(); // Evita que la página dé un salto brusco
-        
-        // 1. Miramos a qué sección quiere ir el usuario (ej: "equipos")
+        e.preventDefault(); 
         const idSeccion = this.getAttribute('href').substring(1); 
-        
-        // 2. Ocultamos TODAS las secciones añadiéndoles la clase .oculto
         secciones.forEach(sec => sec.classList.add('oculto'));
-        
-        // 3. Quitamos el color dorado (activo) de TODOS los botones del menú
         botonesMenu.forEach(btn => btn.classList.remove('activo'));
-        
-        // 4. Mostramos solo la sección que nos interesa quitándole la clase .oculto
         document.getElementById(idSeccion).classList.remove('oculto');
-        
-        // 5. Pintamos de dorado el botón que hemos pulsado
         this.classList.add('activo');
       });
     });
 
-    // --- LÓGICA DE DATOS: (Exactamente igual que antes) ---
+    // Enlaces de tus 3 hojas de Google Sheets
     const urlRanking = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsq6OBXuY7D-RqfmXnmJgrj68kucNI_OMo__j8MrO5lNv1c5klBUoeX5C-w3wawnK7Qs5Ch4ct4hvh/pub?gid=1549772993&single=true&output=csv";
     const urlEquipos = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsq6OBXuY7D-RqfmXnmJgrj68kucNI_OMo__j8MrO5lNv1c5klBUoeX5C-w3wawnK7Qs5Ch4ct4hvh/pub?gid=2064883384&single=true&output=csv";
+    const urlJornadas = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsq6OBXuY7D-RqfmXnmJgrj68kucNI_OMo__j8MrO5lNv1c5klBUoeX5C-w3wawnK7Qs5Ch4ct4hvh/pub?gid=650651817&single=true&output=csv";
 
     function normalizarTexto(texto) {
+      if(!texto) return "";
       return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
     }
 
     async function cargarTodo() {
       try {
+        // ---- 1. CARGAR CLASIFICACIÓN ----
         const resRanking = await fetch(urlRanking);
         const csvRanking = await resRanking.text();
         const sepRank = csvRanking.includes(';') ? ';' : ',';
@@ -151,6 +149,7 @@
           }
         }
 
+        // ---- 2. CARGAR EQUIPOS ----
         const resEquipos = await fetch(urlEquipos);
         const csvEquipos = await resEquipos.text();
         const sepEq = csvEquipos.includes(';') ? ';' : ',';
@@ -173,7 +172,8 @@
                    
                    if (celdaActual === entrenadorBuscado) {
                        encontrado = true;
-                       for (let i = 1; i <= 10; i++) {
+                       // Aumentado a 15 para buscar más profundo si el draft tiene más de 6 Pokémon
+                       for (let i = 1; i <= 15; i++) {
                            if (r + i >= matrizEquipos.length) break;
                            let indicePoke = c + 1;
                            if (indicePoke < matrizEquipos[r+i].length) {
@@ -183,29 +183,109 @@
                                    pokemonDelEntrenador.push(posiblePoke);
                                }
                            }
-                           if (pokemonDelEntrenador.length >= 8) break;
+                           // Parará cuando encuentre 12 Pokémon (ajustable)
+                           if (pokemonDelEntrenador.length >= 12) break;
                        }
                        break; 
                    }
                }
                if (encontrado) break; 
-       }
-
-       if (pokemonDelEntrenador.length > 0) {
-           let htmlPokemon = '';
-           for (let poke of pokemonDelEntrenador) {
-               let pokeLimpio = poke.toLowerCase().replace(/ /g, '-');
-               let imgPrincipal = `https://img.pokemondb.net/sprites/home/normal/${pokeLimpio}.png`;
-               let imgRescate = `https://play.pokemonshowdown.com/sprites/gen5/${pokeLimpio.replace(/-/g, '')}.png`;
-               htmlPokemon += `<div class="pokemon-item"><img src="${imgPrincipal}" onerror="this.onerror=null; this.src='${imgRescate}';" title="${poke}"><span class="pokemon-nombre">${pokeLimpio}</span></div>`;
            }
-           contenedorEquipos.innerHTML += `<div class="tarjeta-equipo"><h3 class="nombre-entrenador">${nombreEntrenador}</h3><div class="grid-pokemon">${htmlPokemon}</div></div>`;
-       } else {
-           contenedorEquipos.innerHTML += `<div class="tarjeta-equipo" style="border: 1px solid #ef5350;"><h3 class="nombre-entrenador" style="color:#ef5350;">${nombreEntrenador} (Equipo no encontrado)</h3><p style="font-size: 12px; text-align:center;">Asegúrate de que este nombre esté escrito EXACTAMENTE igual en la pestaña de Equipos.</p></div>`;
-       }
+
+           if (pokemonDelEntrenador.length > 0) {
+               let htmlPokemon = '';
+               for (let poke of pokemonDelEntrenador) {
+                   let pokeLimpio = poke.toLowerCase().replace(/ /g, '-');
+                   let imgPrincipal = `https://img.pokemondb.net/sprites/home/normal/${pokeLimpio}.png`;
+                   let imgRescate = `https://play.pokemonshowdown.com/sprites/gen5/${pokeLimpio.replace(/-/g, '')}.png`;
+                   htmlPokemon += `<div class="pokemon-item"><img src="${imgPrincipal}" onerror="this.onerror=null; this.src='${imgRescate}';" title="${poke}"><span class="pokemon-nombre">${pokeLimpio}</span></div>`;
+               }
+               contenedorEquipos.innerHTML += `<div class="tarjeta-equipo"><h3 class="nombre-entrenador">${nombreEntrenador}</h3><div class="grid-pokemon">${htmlPokemon}</div></div>`;
+           } else {
+               contenedorEquipos.innerHTML += `<div class="tarjeta-equipo" style="border: 1px solid #ef5350;"><h3 class="nombre-entrenador" style="color:#ef5350;">${nombreEntrenador} (Equipo no encontrado)</h3><p style="font-size: 12px; text-align:center;">Asegúrate de que este nombre esté escrito EXACTAMENTE igual en la pestaña de Equipos.</p></div>`;
+           }
+        }
+
+        // ---- 3. CARGAR JORNADAS (NUEVO) ----
+        const resJor = await fetch(urlJornadas);
+        const csvJor = await resJor.text();
+        const sepJor = csvJor.includes(';') ? ';' : ',';
+        // Quitamos retornos de carro
+        const filasJor = csvJor.replace(/\r/g, '').split('\n');
+        
+        const contenedorJornadas = document.getElementById('contenedor-jornadas');
+        contenedorJornadas.innerHTML = ''; // Limpiamos el texto de cargando
+
+        // La fila 4 de Excel es el índice 3 en programación. Buscamos las columnas de los jugadores.
+        // Asumiendo que las cabeceras están siempre en el índice 3 (Fila 4)
+        let cabecerasJor = filasJor[3].split(sepJor);
+        let mapaColsJugadores = {};
+
+        // Empezamos desde la E (índice 4 en array contando A=0, B=1, C=2, D=3, E=4)
+        for (let j = 4; j < cabecerasJor.length; j += 2) {
+            let nombreCelda = cabecerasJor[j].replace(/"/g, '').trim();
+            if (nombreCelda !== "") {
+                mapaColsJugadores[j] = nombreCelda;
+            }
+        }
+
+        // Leemos las jornadas desde la Fila 5 (índice 4) hacia abajo
+        for (let i = 4; i < filasJor.length; i++) {
+            if (filasJor[i].trim() === '') continue;
+            let cols = filasJor[i].split(sepJor);
+            let nombreJornada = cols[2] ? cols[2].replace(/"/g, '').trim() : "";
+
+            if (nombreJornada.toLowerCase().includes("jornada")) {
+                let htmlJornada = `<div class="tarjeta-equipo"><h3 class="nombre-entrenador" style="font-size:18px; color:white; border-bottom:none;">${nombreJornada}</h3><div style="display:flex; flex-direction:column; gap:10px;">`;
+                
+                // Set para evitar duplicar el mismo combate (A vs B, B vs A)
+                let combatesYaVistos = new Set(); 
+
+                // Revisamos a cada jugador en esta fila
+                for (let col in mapaColsJugadores) {
+                    col = parseInt(col); // Convertimos la columna a número
+                    let jugadorA = mapaColsJugadores[col];
+                    let jugadorB = cols[col] ? cols[col].replace(/"/g, '').trim() : "";
+                    
+                    // El resultado está en la columna de al lado (col + 1)
+                    let resultado = cols[col + 1] ? cols[col + 1].replace(/"/g, '').trim() : "";
+
+                    if (jugadorB !== "") {
+                        // Creamos una "clave" única ordenando los nombres alfabéticamente
+                        // Así si Cire juega con Ángel, la clave es "Ángel-Cire" tanto para Cire como para Ángel.
+                        let par = [jugadorA, jugadorB].sort().join("-");
+                        
+                        if (!combatesYaVistos.has(par)) {
+                            combatesYaVistos.add(par);
+                            
+                            let textoResultado = "";
+                            if(resultado !== "") {
+                                // Formateamos el resultado de color dorado
+                                textoResultado = ` | <span style="color:#fbbf24;">(${resultado})</span>`;
+                            }
+                            
+                            htmlJornada += `<p style="margin:0; font-size: 15px; background-color:#2a3441; padding: 10px; border-radius: 5px;">
+                                              <b>${jugadorA}</b> vs <b>${jugadorB}</b> ${textoResultado}
+                                            </p>`;
+                        }
+                    }
+                }
+                htmlJornada += `</div></div>`;
+                contenedorJornadas.innerHTML += htmlJornada;
+            }
+        }
+        
+        // Si no hay jornadas aún
+        if(contenedorJornadas.innerHTML === '') {
+            contenedorJornadas.innerHTML = '<p style="text-align:center;">Aún no se ha generado ninguna jornada en el Torneo.</p>';
+        }
+
+      } catch (error) { 
+          console.error(error); 
+          document.getElementById('contenedor-jornadas').innerHTML = '<p style="text-align:center; color:#ef5350;">Error al cargar las jornadas.</p>';
+      }
     }
-      } catch (error) { console.error(error); }
-    }
+    
     cargarTodo();
   </script>
 </body>
