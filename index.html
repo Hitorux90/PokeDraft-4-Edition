@@ -172,8 +172,8 @@
                    
                    if (celdaActual === entrenadorBuscado) {
                        encontrado = true;
-                       // Aumentado a 15 para buscar más profundo si el draft tiene más de 6 Pokémon
-                       for (let i = 1; i <= 15; i++) {
+                       // Aumentado a 10 para buscar más profundo si el draft tiene más de 6 Pokémon
+                       for (let i = 1; i <= 10; i++) {
                            if (r + i >= matrizEquipos.length) break;
                            let indicePoke = c + 1;
                            if (indicePoke < matrizEquipos[r+i].length) {
@@ -183,8 +183,8 @@
                                    pokemonDelEntrenador.push(posiblePoke);
                                }
                            }
-                           // Parará cuando encuentre 12 Pokémon (ajustable)
-                           if (pokemonDelEntrenador.length >= 12) break;
+                           // Parará cuando encuentre 8 Pokémon (ajustable)
+                           if (pokemonDelEntrenador.length >= 8) break;
                        }
                        break; 
                    }
